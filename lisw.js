@@ -110,6 +110,26 @@
                 return typeof data[key] === "undefined" ? '' : data[key]
             });
         },
+        /*获取页面传递过来的参数*/
+        simpleQuery:function (){
+            var params= window.location.search;//params:?id,date
+            var arr = params.substring(1).split(",");
+            return arr;
+        },
+        querystring: function(){//获取URL查询字符串参数值的通用函数
+            var str = window.location.search.substring(1);//获取查询字符串，即"id=1&name=location"的部分
+            var arr = str.split("&");//以&符号为界把查询字符串分割成数组
+            var json = {};//定义一个临时对象
+            for(var i=0;i<arr.length;i++)//遍历数组
+            {
+                var c = arr[i].indexOf("=");//获取每个参数中的等号小标的位置
+                if(c==-1) continue;//如果没有发现测跳到下一次循环继续操作
+                var d = arr[i].substring(0,c);//截取等号前的参数名称，这里分别是id和name
+                var e = arr[i].substring(c+1);//截取等号后的参数值
+                json[d] = e;//以名/值对的形式存储在对象中
+            }
+            return json;//返回对象
+        },
         //给一个对象扩充功能
         extendMany: function () {
             var key, i = 0, len = arguments.length, target = null, copy;
@@ -180,7 +200,7 @@
         },
         //解除绑定
         un: function (id, type, fn) {
-            var dom = lis.isString(id) ? document.getElementById(id) : id;
+            var dom = lisw.isString(id) ? document.getElementById(id) : id;
             if (dom.removeEventListener) {
                 dom.removeEventListener(type, fn);
             } else if (dom.detachEvent) {
@@ -543,7 +563,63 @@
 
 
     });
+//动画框架
+    lisw.extend(lisw, {
+        aniMy: function (obj, json, fn, time, speed) {
+            clearInterval(obj.timer);
+            var time = time || 24;
 
+            obj.timer = setInterval(function () {
+                var flag = true;
+                for (var attr in json) {
+                    //返回当前属性值
+                    var currnets = 0;
+                    var step = 0;
+                    var speed = speed || 8;
+                    if (attr == "opacity") {
+                        currnets = Math.round(parseInt(getAttr(obj, attr) * speed)) || 0;
+                        step = (parseInt(json[attr] * speed) - currnets) / speed;
+                    }
+                    else {
+                        currnets = parseInt(getAttr(obj, attr));
+                        step = (json[attr] - currnets) / speed;
+                    }
+                    step = step > 0 ? Math.ceil(step) : Math.floor(step);
+                    if (attr == "opacity") {
+                        //高版本
+                        if ("opacity" in obj.style) {
+                            // obj.style.opacity = json[attr];
+                            obj.style.opacity = (currnets + step) / speed;
+                        }
+                        else {
+                            // obj.style.filter = "alpha(opacity = " + json[attr] * 100 + ")";
+                            obj.style.filter = "alpha(opacity = " + currnets + step + ")";
+                        }
+                    }
+                    else if (attr == "zIndex") {
+                        obj.style.zIndex = json[attr];
+                    }
+                    else {
+                        obj.style[attr] = currnets + step + "px";
+                    }
+                    if (attr == "opacity") {
+                        currnets = currnets / speed;
+                    }
+                    if (currnets != json[attr]) {
+                        flag = false;
+                    }
+                }
+                if (flag) {
+                    clearInterval(obj.timer);
+                    if (fn) {
+                        fn();
+                    }
+                }
+            }, time);
+        }
+
+
+    });
     w.lisw = lisw;
 
 })(window);
